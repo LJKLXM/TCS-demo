@@ -1,0 +1,251 @@
+
+#include "pch.h"
+#include <iostream>
+#include<windows.h>
+#include<random>
+#include"time.h"
+#include<conio.h>
+#define UP 1
+#define DOWN 2
+#define RIGHT 3
+#define LEFT 4
+//#include <regex>
+//#include <string>
+//#include<sstream>
+using namespace std;
+
+static int score = 0;
+class game {
+public:
+	static const int w_height = 30;
+	static const int w_width = 80;
+public:
+	static void gameint() {
+		system("mode con cols=85 lines=40");
+		system("title TCS");
+		HANDLE handle = GetStdHandle(STD_OUTPUT_HANDLE);// 句柄 唯一索引 <windows.h>
+		CONSOLE_CURSOR_INFO CursorInfo;					//光标信息
+		GetConsoleCursorInfo(handle, &CursorInfo);//检索控制台屏幕缓冲区的游标的大小和可见性的信息
+		CursorInfo.bVisible = false;          //光标不可见
+		SetConsoleCursorInfo(handle, &CursorInfo);
+		srand((unsigned int)time(0));         //由时间获取随机值
+	}	
+};
+void gotoxy(int x, int y) {
+		COORD pos = { x,y };                 //光标位置
+		SetConsoleCursorPosition(GetStdHandle(STD_ERROR_HANDLE), pos);//API定位光标位置的函数
+	}											//使光标到达pos位置
+static void drawmap() {
+	system("cls");
+	int i, j;
+	for (i = 0; i < game::w_width; i++) {
+		cout << "=";
+	}cout << endl;
+	for (i = 1; i < game::w_height; i++){
+		for (j = 0; j < game::w_width; j++) {
+			if (j > 0 && j < 79)
+				cout << " ";
+			else
+				cout << "=";
+			
+		}cout << endl;
+	}
+	for (i = 0; i < game::w_width; i++) {
+		cout << "=";
+	}cout << endl;
+}
+typedef struct {
+	int x;
+	int y;
+}xy;
+class Food {
+private:
+	xy food;//食物坐标
+public:
+	void randomXY() {
+		food.x = rand() % (game::w_width-2)+1;
+		food.y = rand() % (game::w_height-2)+1;
+	}
+	void drowfood() {
+		//SetColor(12, 0);
+		gotoxy(food.x, food.y);
+		cout << "♥";
+	}
+
+	xy getfoodxy() {
+		xy a;
+		a=this->food;
+		return a;
+	}
+};
+class Snake {
+private:
+	int m;//方向
+	bool s_alive;
+public:
+	vector<xy> m_zb;//蛇身数组
+public:
+	Snake(){
+		m = 1;
+		s_alive = true;
+		xy s_head;
+		s_head.x = game::w_width / 2 - 15;
+		s_head.y = game::w_height/2;
+		this->m_zb.push_back(s_head);
+		s_head.y++;
+		this->m_zb.push_back(s_head);
+		s_head.y++;
+		this->m_zb.push_back(s_head);
+	}
+	void drowSnake() {
+		for (unsigned int i = 0; i < this->m_zb.size(); i++) {
+			gotoxy(m_zb[i].x, m_zb[i].y);
+			cout << "*";
+		}
+	}
+	void listen_key() {
+		char ch;
+		if (_kbhit()) {//非阻塞函数
+			ch = _getch();
+			switch (ch) {
+			case 'w':
+			case 'W':
+				if (this->m == DOWN)
+					break;
+				this->m = UP;
+				break;
+			case 's':
+			case 'S':
+				if (this->m == UP)
+					break;
+				this->m = DOWN;
+				break;
+			case 'a':
+			case 'A':
+				if (this->m == LEFT)
+					break;
+				this->m = RIGHT;
+				break;
+			case 'D':
+			case 'd':
+				if (this->m == RIGHT)
+					break;
+				this->m = LEFT;
+				break;
+			}
+		}
+	}
+	void move_snake() {
+		listen_key();
+		xy head = m_zb[0];
+		switch (this->m) {
+			//1上   2下   3左    4右
+			case 1:
+				head.y--;
+				break;
+			case 2:
+				head.y++;
+				break;
+			case 3:
+				head.x--;
+				break;
+			case 4:
+				head.x++;
+				break;
+		}
+
+		m_zb.insert(m_zb.begin(), head);
+	}
+	bool s_eat(Food &f) {
+		xy f_zb = f.getfoodxy();
+		if (f_zb.x == m_zb[0].x&&f_zb.y == m_zb[0].y) {
+			f.randomXY();
+			score++;
+			return true;
+		}
+		else {
+			m_zb.erase(m_zb.end() - 1);
+			return false;
+		}
+	}
+	void clearsnake() {
+		gotoxy(m_zb[this->m_zb.size() - 1].x, m_zb[this->m_zb.size() - 1].y);
+		cout << " ";
+	}
+	bool s_live() {
+		int a = m_zb[0].x;
+		int b = m_zb[0].y;
+		if (0 < a && a < 79 && 0 < b && b < 29)
+			this->s_alive = true;
+		else
+			this->s_alive = false;
+		return this->s_alive;
+	}
+};
+void menu() {
+	cout << "欢迎！"<<endl;
+	cout << "输入1开始"<<endl;
+	cout << "不要输入字母." << endl;
+}
+//string num(int a) { //数字转为字符串
+//	stringstream ss;
+//	ss << a;
+//	return ss.str();
+//
+//}
+int main()
+{
+	for(;;){
+		menu();
+		int count;
+		cin >> count;
+
+		//string str = { "[1-2]+" };
+		//regex re(str);
+		//	if (regex_match(num(count),re))
+		//		cout<<count;
+		//	else {
+		//		cout<<"cuo"<<endl;
+		//		break;
+		//	}
+				
+		switch (count)
+		{
+			case 1:{
+			cout << "kaishile";
+			Food f; Snake s;
+			game::gameint();
+			drawmap();
+			f.randomXY();
+
+			Snake();
+			while (true) {
+			f.drowfood();
+			s.move_snake();
+			s.drowSnake();
+			s.clearsnake();
+			s.s_eat(f);
+			if (s.s_live() == true)
+				;
+			else
+		{
+			system("cls");
+			cout << "您得score：" << score;
+			score = 0;
+			break;
+		}
+
+				Sleep(200);
+			}
+			}
+			default:
+			{
+			cout << "已退出";
+			break;
+			}
+		}//switch
+	}
+}
+
+// 运行程序: Ctrl + F5 或调试 >“开始执行(不调试)”菜单
+// 调试程序: F5 或调试 >“开始调试”菜单
